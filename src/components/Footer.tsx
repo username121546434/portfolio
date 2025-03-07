@@ -11,7 +11,7 @@ export function Footer() {
           </p>
           <div className="flex items-center gap-6">
             <a
-              href="mailto:atharvgokule@gmail.com"
+              href="mailto:gokuleatharv06@gmail.com"
               className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
               aria-label="Email"
             >
@@ -27,7 +27,7 @@ export function Footer() {
               <Github size={24} />
             </a>
             <a
-              href="https://instagram.com/atharvgokule"
+              href="https://instagram.com/superheroyrr"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
@@ -36,7 +36,7 @@ export function Footer() {
               <Instagram size={24} />
             </a>
             <a
-              href="https://youtube.com/@atharvgokule"
+              href="https://youtube.com/@Superheroyrr"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
