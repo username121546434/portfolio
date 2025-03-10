@@ -29,6 +29,13 @@ const sendEmail = async (req, res) => {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
+      // Add explicit TLS options to resolve SSL issues
+      tls: {
+        // Do not fail on invalid certificates
+        rejectUnauthorized: false,
+        // Force specific TLS version to prevent version mismatch
+        minVersion: 'TLSv1.2'
+      }
     });
 
     const mailOptions = {

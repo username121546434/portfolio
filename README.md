@@ -70,4 +70,27 @@ The contact form uses Nodemailer to send emails from both local development and 
 ## Building for Production
 
 1. Build the app: `npm run build`
-2. Preview the build: `npm run preview` 
+2. Preview the build: `npm run preview`
+
+## Troubleshooting
+
+### Email SSL Issues on Vercel
+
+If you encounter SSL/TLS errors when sending emails from Vercel (such as "wrong version number" errors), try these solutions:
+
+1. **Change Email Port and SSL Settings**:
+   - Use port 465 with SSL enabled instead of port 587 with STARTTLS:
+     ```
+     EMAIL_PORT=465
+     EMAIL_SECURE=true
+     ```
+
+2. **Update Environment Variables on Vercel**:
+   - After changing your local `.env` file, update the corresponding environment variables in your Vercel project settings.
+
+3. **Check Gmail Account Settings**:
+   - Make sure "Less secure app access" is enabled or that you're using an App Password.
+   - If using 2-factor authentication, you must use an App Password.
+
+4. **Issues with Gmail SMTP**:
+   - If problems persist with Gmail SMTP, consider using a transactional email service like SendGrid, Mailgun, or Amazon SES which tend to work more reliably with serverless environments. 
