@@ -1,9 +1,8 @@
-import React from 'react';
 import { User } from 'lucide-react';
 
 export function AboutSection() {
   return (
-    <section className="container mx-auto px-4 py-16">
+    <section id="about" className="container mx-auto px-4 py-16">
       <div className="flex items-center gap-3 mb-8">
         <User size={32} className="text-green-600 dark:text-green-400" />
         <h2 className="text-3xl font-bold">About Me</h2>

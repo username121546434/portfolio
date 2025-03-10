@@ -1,4 +1,3 @@
-import React from 'react';
 import { Code2 } from 'lucide-react';
 import { Project, ProjectCard } from './ProjectCard';
 
@@ -10,7 +9,7 @@ interface ProjectsSectionProps {
 
 export function ProjectsSection({ projects, loading, error }: ProjectsSectionProps) {
   return (
-    <section className="container mx-auto px-4 py-16">
+    <section id="projects" className="container mx-auto px-4 py-16">
       <div className="flex items-center gap-3 mb-8">
         <Code2 size={32} className="text-blue-600 dark:text-blue-400" />
         <h2 className="text-3xl font-bold">Featured Projects</h2>

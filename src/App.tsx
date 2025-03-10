@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Github } from 'lucide-react';
 import { Octokit } from 'octokit';
 import { Project } from './components/ProjectCard';
@@ -6,6 +6,10 @@ import { Achievement } from './components/AchievementCard';
 import { ProjectsSection } from './components/ProjectsSection';
 import { AchievementsSection } from './components/AchievementsSection';
 import { AboutSection } from './components/AboutSection';
+import { EducationSection } from './components/EducationSection';
+import { ExtracurricularsSection } from './components/ExtracurricularsSection';
+import { ContactSection } from './components/ContactSection';
+import { NavBar } from './components/NavBar';
 import { Footer } from './components/Footer';
 
 function App() {
@@ -65,8 +69,10 @@ function App() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gradient-to-br dark:from-gray-900 dark:to-gray-800 text-gray-900 dark:text-white">
+      <NavBar />
+      
       {/* Hero Section */}
-      <header className="container mx-auto px-4 py-16 text-center">
+      <header id="home" className="container mx-auto px-4 py-16 text-center">
         <div className="mb-8">
           <img 
             src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=200&h=200"
@@ -91,6 +97,9 @@ function App() {
       <AboutSection />
       <ProjectsSection projects={projects} loading={loading} error={error} />
       <AchievementsSection achievements={achievements} />
+      <EducationSection />
+      <ExtracurricularsSection />
+      <ContactSection />
       <Footer />
     </div>
   );
