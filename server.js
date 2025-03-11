@@ -1,14 +1,44 @@
 const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['https://personal-website-admin-panel.vercel.app', 'http://localhost:5173'],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
+
+// Serve static files from .well-known directory with proper CORS headers
+app.get('/.well-known/admin-panel-verification.txt', (req, res) => {
+  try {
+    // Read the verification file from the filesystem
+    const filePath = path.join(__dirname, '.well-known', 'admin-panel-verification.txt');
+    
+    if (fs.existsSync(filePath)) {
+      const fileContent = fs.readFileSync(filePath, 'utf8');
+      
+      // Set CORS headers specifically for this endpoint
+      res.header('Access-Control-Allow-Origin', '*');
+      res.header('Access-Control-Allow-Methods', 'GET');
+      res.header('Access-Control-Allow-Headers', 'Content-Type');
+      
+      res.type('text/plain').send(fileContent);
+    } else {
+      res.status(404).send('Verification file not found');
+    }
+  } catch (error) {
+    console.error('Error serving verification file:', error);
+    res.status(500).send('Error serving verification file');
+  }
+});
 
 // Email sending handler (same as in the serverless function)
 const sendEmail = async (req, res) => {
