@@ -21,8 +21,10 @@ import {
   getProfile
 } from './utils/firestore';
 import { migrateAllData } from './utils/dataMigration';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-function App() {
+function AppContent() {
+  const { userId, isAuthenticated } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [education, setEducation] = useState<Education[]>([]);
@@ -41,11 +43,11 @@ function App() {
         // Fetch all data from Firestore
         const [projectsData, achievementsData, educationData, extracurricularsData, profileData] = 
           await Promise.all([
-            getProjects(true), // Get featured projects only
-            getAchievements(),
-            getEducation(),
-            getExtracurriculars(),
-            getProfile()
+            getProjects(true, userId), // Get featured projects only
+            getAchievements(userId),
+            getEducation(userId),
+            getExtracurriculars(userId),
+            getProfile(userId)
           ]);
         
         setProjects(projectsData);
@@ -54,14 +56,17 @@ function App() {
         setExtracurriculars(extracurricularsData);
         setProfile(profileData);
         
-        // If no data is found, show migration button
+        // If no data is found, show migration button (only for authenticated users)
         if (
+          isAuthenticated &&
           projectsData.length === 0 && 
           achievementsData.length === 0 && 
           educationData.length === 0 && 
           !profileData
         ) {
           setShowMigrationButton(true);
+        } else {
+          setShowMigrationButton(false);
         }
         
         setLoading(false);
@@ -73,109 +78,93 @@ function App() {
     };
 
     fetchData();
-  }, []);
+  }, [userId, isAuthenticated]);
 
   const handleMigrateData = async () => {
+    if (!userId) return;
+    
     try {
       setMigrating(true);
-      await migrateAllData();
-      
-      // Refresh the data after migration
-      const [projectsData, achievementsData, educationData, extracurricularsData, profileData] = 
-        await Promise.all([
-          getProjects(true),
-          getAchievements(),
-          getEducation(),
-          getExtracurriculars(),
-          getProfile()
-        ]);
-      
-      setProjects(projectsData);
-      setAchievements(achievementsData);
-      setEducation(educationData);
-      setExtracurriculars(extracurricularsData);
-      setProfile(profileData);
-      
-      setShowMigrationButton(false);
-      setMigrating(false);
+      await migrateAllData(userId);
+      alert('Data migration completed! Refreshing page...');
+      window.location.reload();
     } catch (error) {
-      console.error('Error migrating data:', error);
-      setError('Failed to migrate data');
+      console.error('Error during migration:', error);
+      alert('Error during data migration. See console for details.');
+    } finally {
       setMigrating(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-white dark:bg-gradient-to-br dark:from-gray-900 dark:to-gray-800 text-gray-900 dark:text-white">
-      <NavBar />
-      
-      {/* Migration Button (only visible if no data is found) */}
-      {showMigrationButton && (
-        <div className="fixed top-20 right-4 z-50 bg-yellow-100 dark:bg-yellow-900 p-4 rounded-lg shadow-lg">
-          <h3 className="text-lg font-bold mb-2">First-time Setup</h3>
-          <p className="mb-3">No data found in Firestore. Would you like to migrate your existing data?</p>
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-b-transparent"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-2">Error Loading Content</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
           <button 
-            onClick={handleMigrateData} 
-            disabled={migrating}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+            onClick={() => window.location.reload()} 
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           >
-            {migrating ? 'Migrating...' : 'Migrate Data'}
+            Try Again
           </button>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white dark:bg-gray-900">
+      <NavBar />
       
-      {/* Hero Section */}
-      <header id="home" className="container mx-auto px-4 py-16 text-center">
-        {loading ? (
-          <div className="animate-pulse">
-            <div className="w-32 h-32 rounded-full mx-auto mb-6 bg-gray-300 dark:bg-gray-700"></div>
-            <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded max-w-md mx-auto mb-2"></div>
-            <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded max-w-sm mx-auto mb-4"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded max-w-lg mx-auto mb-8"></div>
-          </div>
-        ) : error ? (
-          <div className="text-red-600 dark:text-red-400">
-            <p>{error}</p>
-          </div>
-        ) : profile ? (
-          <>
-            <div className="mb-8">
-              <img 
-                src={profile.avatarUrl || "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=200&h=200"}
-                alt={`${profile.name} avatar`}
-                className="w-32 h-32 rounded-full mx-auto mb-6 object-cover"
-              />
-            </div>
-            <h1 className="text-4xl md:text-6xl font-bold mb-2">{profile.name}</h1>
-            <h2 className="text-2xl md:text-3xl text-gray-600 dark:text-gray-300 mb-4">{profile.title}</h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">{profile.bio || profile.tagline}</p>
-            {profile.githubUrl && (
-              <a 
-                href={profile.githubUrl}
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-3 rounded-full font-semibold hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
-              >
-                <Github size={20} />
-                View GitHub Profile
-              </a>
-            )}
-          </>
-        ) : (
-          <div className="text-gray-600 dark:text-gray-300">
-            <p>No profile information available.</p>
+      <main>
+        <AboutSection profile={profile} />
+        
+        {projects.length > 0 && <ProjectsSection projects={projects} loading={loading} error={error} />}
+        
+        {achievements.length > 0 && <AchievementsSection achievements={achievements} loading={loading} error={error} />}
+        
+        {education.length > 0 && <EducationSection educationItems={education} loading={loading} error={error} />}
+        
+        {extracurriculars.length > 0 && <ExtracurricularsSection extracurriculars={extracurriculars} loading={loading} error={error} />}
+        
+        <ContactSection />
+        
+        {showMigrationButton && (
+          <div className="container mx-auto px-4 py-8 text-center">
+            <h2 className="text-xl font-bold mb-4">Admin Tools</h2>
+            <button
+              onClick={handleMigrateData}
+              disabled={migrating}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+            >
+              {migrating ? 'Migrating Data...' : 'Migrate Data from Default Content'}
+            </button>
+            <p className="mt-2 text-sm text-gray-600">
+              This will populate your content with sample data. Use only once.
+            </p>
           </div>
         )}
-      </header>
-
-      <AboutSection profile={profile} />
-      <ProjectsSection projects={projects} loading={loading} error={error} />
-      <AchievementsSection achievements={achievements} loading={loading} error={error} />
-      <EducationSection educationItems={education} loading={loading} error={error} />
-      <ExtracurricularsSection extracurriculars={extracurriculars} loading={loading} error={error} />
-      <ContactSection />
+      </main>
+      
       <Footer />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

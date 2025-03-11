@@ -31,20 +31,37 @@ export const convertTimestamps = <T>(obj: any): T => {
   return result as T;
 };
 
-// Get profile information (about me section)
-export const getProfile = async (): Promise<Profile | null> => {
+// Get profile information
+export const getProfile = async (userId: string | null = null): Promise<Profile | null> => {
   try {
-    const profilesCollection = collection(db, 'profiles');
-    const profilesQuery = query(profilesCollection, limit(1));
-    const profilesSnapshot = await getDocs(profilesQuery);
+    let profileDoc;
     
-    if (profilesSnapshot.empty) return null;
+    if (userId) {
+      // If userId is provided, get from user-specific collection
+      profileDoc = doc(db, `users/${userId}/content/profile`);
+    } else {
+      // Legacy fallback to global collection
+      profileDoc = doc(db, 'profile', 'main');
+    }
     
-    const profileData = profilesSnapshot.docs[0].data();
-    return convertTimestamps<Profile>({
-      id: profilesSnapshot.docs[0].id,
-      ...profileData
-    });
+    const profileSnapshot = await getDoc(profileDoc);
+    
+    if (!profileSnapshot.exists() && userId) {
+      // If not found in user's collection, try legacy global collection as fallback
+      const legacyProfileDoc = doc(db, 'profile', 'main');
+      const legacyProfileSnapshot = await getDoc(legacyProfileDoc);
+      
+      if (legacyProfileSnapshot.exists()) {
+        return convertTimestamps<Profile>(legacyProfileSnapshot.data());
+      }
+      return null;
+    }
+    
+    if (!profileSnapshot.exists()) {
+      return null;
+    }
+    
+    return convertTimestamps<Profile>(profileSnapshot.data());
   } catch (error) {
     console.error('Error fetching profile:', error);
     return null;
@@ -52,15 +69,24 @@ export const getProfile = async (): Promise<Profile | null> => {
 };
 
 // Get projects
-export const getProjects = async (featuredOnly = false): Promise<Project[]> => {
+export const getProjects = async (featuredOnly = false, userId: string | null = null): Promise<Project[]> => {
   try {
-    const projectsCollection = collection(db, 'projects');
+    let projectsCollection;
+    
+    if (userId) {
+      // If userId is provided, get from user-specific collection
+      projectsCollection = collection(db, `users/${userId}/content/projects/items`);
+    } else {
+      // Legacy fallback to global collection
+      projectsCollection = collection(db, 'projects');
+    }
+    
     let projectsQuery;
     
     if (featuredOnly) {
       projectsQuery = query(
         projectsCollection, 
-        where('featured', '==', true), 
+        where('featured', '==', true),
         orderBy('order', 'asc')
       );
     } else {
@@ -71,6 +97,24 @@ export const getProjects = async (featuredOnly = false): Promise<Project[]> => {
     }
     
     const projectsSnapshot = await getDocs(projectsQuery);
+    
+    // If no projects found in user collection and we have a userId, try legacy collection as fallback
+    if (projectsSnapshot.empty && userId) {
+      const legacyCollection = collection(db, 'projects');
+      const legacyQuery = featuredOnly 
+        ? query(legacyCollection, where('featured', '==', true), orderBy('order', 'asc'))
+        : query(legacyCollection, orderBy('order', 'asc'));
+      
+      const legacySnapshot = await getDocs(legacyQuery);
+      
+      return legacySnapshot.docs.map(doc => 
+        convertTimestamps<Project>({
+          id: doc.id,
+          ...doc.data()
+        })
+      );
+    }
+    
     return projectsSnapshot.docs.map(doc => 
       convertTimestamps<Project>({
         id: doc.id,
@@ -84,15 +128,39 @@ export const getProjects = async (featuredOnly = false): Promise<Project[]> => {
 };
 
 // Get achievements
-export const getAchievements = async (): Promise<Achievement[]> => {
+export const getAchievements = async (userId: string | null = null): Promise<Achievement[]> => {
   try {
-    const achievementsCollection = collection(db, 'achievements');
+    let achievementsCollection;
+    
+    if (userId) {
+      // If userId is provided, get from user-specific collection
+      achievementsCollection = collection(db, `users/${userId}/content/academicAchievements/items`);
+    } else {
+      // Legacy fallback to global collection
+      achievementsCollection = collection(db, 'achievements');
+    }
+    
     const achievementsQuery = query(
       achievementsCollection, 
       orderBy('order', 'asc')
     );
     
     const achievementsSnapshot = await getDocs(achievementsQuery);
+    
+    // If no achievements found in user collection and we have a userId, try legacy collection as fallback
+    if (achievementsSnapshot.empty && userId) {
+      const legacyCollection = collection(db, 'achievements');
+      const legacyQuery = query(legacyCollection, orderBy('order', 'asc'));
+      const legacySnapshot = await getDocs(legacyQuery);
+      
+      return legacySnapshot.docs.map(doc => 
+        convertTimestamps<Achievement>({
+          id: doc.id,
+          ...doc.data()
+        })
+      );
+    }
+    
     return achievementsSnapshot.docs.map(doc => 
       convertTimestamps<Achievement>({
         id: doc.id,
@@ -106,15 +174,39 @@ export const getAchievements = async (): Promise<Achievement[]> => {
 };
 
 // Get education
-export const getEducation = async (): Promise<Education[]> => {
+export const getEducation = async (userId: string | null = null): Promise<Education[]> => {
   try {
-    const educationCollection = collection(db, 'education');
+    let educationCollection;
+    
+    if (userId) {
+      // If userId is provided, get from user-specific collection
+      educationCollection = collection(db, `users/${userId}/content/education/items`);
+    } else {
+      // Legacy fallback to global collection
+      educationCollection = collection(db, 'education');
+    }
+    
     const educationQuery = query(
       educationCollection, 
       orderBy('order', 'asc')
     );
     
     const educationSnapshot = await getDocs(educationQuery);
+    
+    // If no education found in user collection and we have a userId, try legacy collection as fallback
+    if (educationSnapshot.empty && userId) {
+      const legacyCollection = collection(db, 'education');
+      const legacyQuery = query(legacyCollection, orderBy('order', 'asc'));
+      const legacySnapshot = await getDocs(legacyQuery);
+      
+      return legacySnapshot.docs.map(doc => 
+        convertTimestamps<Education>({
+          id: doc.id,
+          ...doc.data()
+        })
+      );
+    }
+    
     return educationSnapshot.docs.map(doc => 
       convertTimestamps<Education>({
         id: doc.id,
@@ -128,15 +220,39 @@ export const getEducation = async (): Promise<Education[]> => {
 };
 
 // Get extracurriculars
-export const getExtracurriculars = async (): Promise<Extracurricular[]> => {
+export const getExtracurriculars = async (userId: string | null = null): Promise<Extracurricular[]> => {
   try {
-    const extracurricularsCollection = collection(db, 'extracurriculars');
+    let extracurricularsCollection;
+    
+    if (userId) {
+      // If userId is provided, get from user-specific collection
+      extracurricularsCollection = collection(db, `users/${userId}/content/extracurricularActivities/items`);
+    } else {
+      // Legacy fallback to global collection
+      extracurricularsCollection = collection(db, 'extracurriculars');
+    }
+    
     const extracurricularsQuery = query(
       extracurricularsCollection, 
       orderBy('order', 'asc')
     );
     
     const extracurricularsSnapshot = await getDocs(extracurricularsQuery);
+    
+    // If no extracurriculars found in user collection and we have a userId, try legacy collection as fallback
+    if (extracurricularsSnapshot.empty && userId) {
+      const legacyCollection = collection(db, 'extracurriculars');
+      const legacyQuery = query(legacyCollection, orderBy('order', 'asc'));
+      const legacySnapshot = await getDocs(legacyQuery);
+      
+      return legacySnapshot.docs.map(doc => 
+        convertTimestamps<Extracurricular>({
+          id: doc.id,
+          ...doc.data()
+        })
+      );
+    }
+    
     return extracurricularsSnapshot.docs.map(doc => 
       convertTimestamps<Extracurricular>({
         id: doc.id,

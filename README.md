@@ -93,4 +93,29 @@ If you encounter SSL/TLS errors when sending emails from Vercel (such as "wrong 
    - If using 2-factor authentication, you must use an App Password.
 
 4. **Issues with Gmail SMTP**:
-   - If problems persist with Gmail SMTP, consider using a transactional email service like SendGrid, Mailgun, or Amazon SES which tend to work more reliably with serverless environments. 
+   - If problems persist with Gmail SMTP, consider using a transactional email service like SendGrid, Mailgun, or Amazon SES which tend to work more reliably with serverless environments.
+
+## Admin Panel Integration
+
+The portfolio website can now be integrated with the personal website admin panel for easier content management. This integration allows you to manage all your content through a user-friendly admin interface.
+
+### How to Connect to Admin Panel
+
+1. Navigate to your portfolio website
+2. Click on the "Admin" button in the footer
+3. Login with the same Google account or email/password that you use for the admin panel
+4. Once logged in, your website will be automatically connected to your admin panel account
+
+### Content Structure
+
+All content is now stored in a user-specific Firebase Firestore structure:
+
+```
+/users/{userId}/content/{contentType}/items/{itemId}
+```
+
+This structure allows multiple websites to be managed by the same admin panel while keeping content separate.
+
+### Authentication
+
+The website uses Firebase Authentication to verify your identity. When you log in, the system automatically associates your website with your admin panel account, allowing seamless content management. 

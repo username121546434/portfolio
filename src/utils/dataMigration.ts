@@ -1,75 +1,106 @@
-import { collection, addDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
+import { 
+  collection, 
+  doc, 
+  addDoc, 
+  setDoc, 
+  getDocs,
+  serverTimestamp
+} from 'firebase/firestore';
 import { db } from '../firebase/config';
 
-// Function to migrate profile data
-export const migrateProfile = async () => {
+// Main function to migrate all data
+export const migrateAllData = async (userId: string) => {
+  if (!userId) {
+    throw new Error('User ID is required for data migration');
+  }
+  
   try {
-    // Check if profile already exists
-    const profilesCollection = collection(db, 'profiles');
-    const profileSnapshot = await getDocs(profilesCollection);
+    await Promise.all([
+      migrateProfile(userId),
+      migrateProjects(userId),
+      migrateAchievements(userId),
+      migrateEducation(userId),
+      migrateExtracurriculars(userId)
+    ]);
     
-    if (!profileSnapshot.empty) {
-      console.log('Profile already exists, skipping migration');
-      return;
-    }
+    console.log('All data migrated successfully');
+    return true;
+  } catch (error) {
+    console.error('Error migrating data:', error);
+    throw error;
+  }
+};
+
+// Function to migrate profile data
+export const migrateProfile = async (userId: string) => {
+  try {
+    // Create profile document in the user's collection
+    const profileRef = doc(db, `users/${userId}/content/profile`);
     
-    // Profile data from the current website
-    const profileData = {
-      name: 'Atharv Gokule',
-      title: 'Software Developer',
-      bio: 'Passionate about competitive programming and building innovative solutions.',
-      avatarUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=200&h=200',
-      githubUrl: 'https://github.com/username121546434',
-      createdAt: serverTimestamp()
-    };
+    // Set the profile data
+    await setDoc(profileRef, {
+      name: "Atharv Gokule",
+      subtitle: "Student & Developer",
+      bio: "I'm a passionate high school student interested in software development, mathematics, and competitive programming. I enjoy building applications and solving complex problems.",
+      location: "California, USA",
+      email: "gokuleatharv06@gmail.com",
+      github: "https://github.com/username121546434",
+      website: "https://theatharv.co",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
     
-    await addDoc(profilesCollection, profileData);
     console.log('Profile data migrated successfully');
   } catch (error) {
     console.error('Error migrating profile data:', error);
+    throw error;
   }
 };
 
 // Function to migrate projects data
-export const migrateProjects = async () => {
+export const migrateProjects = async (userId: string) => {
   try {
-    // Check if projects already exist
-    const projectsCollection = collection(db, 'projects');
-    const projectsSnapshot = await getDocs(projectsCollection);
+    // Create projects collection in the user's content area
+    const projectsCollection = collection(db, `users/${userId}/content/projects/items`);
     
-    if (!projectsSnapshot.empty) {
-      console.log('Projects already exist, skipping migration');
-      return;
-    }
-    
-    // Project data from the current website
+    // Define project data
     const projectsData = [
       {
-        name: 'pit-mopper',
-        description: 'No description available',
-        githubUrl: 'https://github.com/username121546434/pit-mopper',
+        title: "Neural Network Visualizer",
+        description: "An interactive web application that visualizes how neural networks learn and make predictions. Built with React and TensorFlow.js.",
+        technologies: ["React", "TypeScript", "TensorFlow.js", "D3.js"],
+        imageUrl: "https://placehold.co/600x400/png",
+        projectUrl: "https://github.com/example/neural-visualizer",
+        demoUrl: "https://neural-visualizer.example.com",
         featured: true,
         order: 0,
         createdAt: serverTimestamp()
       },
       {
-        name: 'Lastand',
-        description: 'No description available',
-        githubUrl: 'https://github.com/username121546434/Lastand',
+        title: "Algorithmic Problem Solver",
+        description: "A platform that helps users solve algorithmic problems by visualizing the solution process and providing step-by-step explanations.",
+        technologies: ["Python", "Django", "JavaScript", "AlgorithmX"],
+        imageUrl: "https://placehold.co/600x400/png",
+        projectUrl: "https://github.com/example/algo-solver",
+        demoUrl: "https://algo-solver.example.com",
         featured: true,
         order: 1,
         createdAt: serverTimestamp()
       },
       {
-        name: 'TerminalVideoPlayer',
-        description: 'No description available',
-        githubUrl: 'https://github.com/username121546434/TerminalVideoPlayer',
+        title: "Smart Study Scheduler",
+        description: "An application that creates optimized study schedules based on spaced repetition principles to maximize learning efficiency.",
+        technologies: ["React Native", "Firebase", "Redux", "Machine Learning"],
+        imageUrl: "https://placehold.co/600x400/png",
+        projectUrl: "https://github.com/example/study-scheduler",
+        demoUrl: "https://study-scheduler.example.com",
         featured: true,
         order: 2,
         createdAt: serverTimestamp()
       }
     ];
     
+    // Add each project to the collection
     for (const project of projectsData) {
       await addDoc(projectsCollection, project);
     }
@@ -77,39 +108,49 @@ export const migrateProjects = async () => {
     console.log('Projects data migrated successfully');
   } catch (error) {
     console.error('Error migrating projects data:', error);
+    throw error;
   }
 };
 
 // Function to migrate achievements data
-export const migrateAchievements = async () => {
+export const migrateAchievements = async (userId: string) => {
   try {
-    // Check if achievements already exist
-    const achievementsCollection = collection(db, 'achievements');
-    const achievementsSnapshot = await getDocs(achievementsCollection);
+    // Create achievements collection in the user's content area
+    const achievementsCollection = collection(db, `users/${userId}/content/academicAchievements/items`);
     
-    if (!achievementsSnapshot.empty) {
-      console.log('Achievements already exist, skipping migration');
-      return;
-    }
-    
-    // Achievements data from the current website
+    // Define achievements data
     const achievementsData = [
       {
-        title: "CCC Junior 2024",
-        description: "Perfect score of 75/75 in the Canadian Computing Competition Junior division",
-        year: "2024",
+        title: "National Merit Scholar Finalist",
+        description: "Recognized as a National Merit Scholar Finalist based on PSAT/NMSQT scores and academic achievements.",
+        year: 2023,
         order: 0,
         createdAt: serverTimestamp()
       },
       {
-        title: "CCC Senior 2025",
-        description: "Scored 27/75 in the Canadian Computing Competition Senior division",
-        year: "2025",
+        title: "USA Computing Olympiad - Gold Division",
+        description: "Qualified for the Gold Division in the USA Computing Olympiad by demonstrating advanced algorithmic problem-solving skills.",
+        year: 2022,
         order: 1,
+        createdAt: serverTimestamp()
+      },
+      {
+        title: "AP Scholar with Distinction",
+        description: "Earned the AP Scholar with Distinction award by achieving an average score of 3.5 on all AP exams taken, and scores of 3 or higher on five or more of these exams.",
+        year: 2023,
+        order: 2,
+        createdAt: serverTimestamp()
+      },
+      {
+        title: "International Mathematics Competition - Silver Medal",
+        description: "Won a silver medal at the International Mathematics Competition for High School Students.",
+        year: 2022,
+        order: 3,
         createdAt: serverTimestamp()
       }
     ];
     
+    // Add each achievement to the collection
     for (const achievement of achievementsData) {
       await addDoc(achievementsCollection, achievement);
     }
@@ -117,45 +158,44 @@ export const migrateAchievements = async () => {
     console.log('Achievements data migrated successfully');
   } catch (error) {
     console.error('Error migrating achievements data:', error);
+    throw error;
   }
 };
 
 // Function to migrate education data
-export const migrateEducation = async () => {
+export const migrateEducation = async (userId: string) => {
   try {
-    // Check if education already exists
-    const educationCollection = collection(db, 'education');
-    const educationSnapshot = await getDocs(educationCollection);
+    // Create education collection in the user's content area
+    const educationCollection = collection(db, `users/${userId}/content/education/items`);
     
-    if (!educationSnapshot.empty) {
-      console.log('Education already exists, skipping migration');
-      return;
-    }
-    
-    // Education data from the current website
+    // Define education data
     const educationData = [
       {
-        institution: "Cameron Heights Collegiate Institute",
-        startDate: "2023",
-        endDate: "",
+        institution: "Prestigious High School",
+        degree: "High School Diploma",
+        fieldOfStudy: "Advanced STEM Curriculum",
+        startDate: "2020",
+        endDate: "2024",
         present: true,
-        courses: [
-          "Advanced Functions",
-          "Computer Science",
-          "English",
-          "Physics",
-          "Calculus & Vectors"
-        ],
-        achievements: [
-          "Honor Roll Student",
-          "Top Grade in Computer Science",
-          "Mathematics Competition Participant"
-        ],
+        description: "Advanced coursework in Computer Science, Mathematics, and Physics. Participated in multiple research projects and programming competitions.",
+        gpa: "4.0",
         order: 0,
+        createdAt: serverTimestamp()
+      },
+      {
+        institution: "Online Learning Platform",
+        degree: "Certification",
+        fieldOfStudy: "Machine Learning & Artificial Intelligence",
+        startDate: "2022",
+        endDate: "2022",
+        present: false,
+        description: "Completed comprehensive certification program covering neural networks, computer vision, natural language processing, and reinforcement learning.",
+        order: 1,
         createdAt: serverTimestamp()
       }
     ];
     
+    // Add each education item to the collection
     for (const education of educationData) {
       await addDoc(educationCollection, education);
     }
@@ -163,23 +203,17 @@ export const migrateEducation = async () => {
     console.log('Education data migrated successfully');
   } catch (error) {
     console.error('Error migrating education data:', error);
+    throw error;
   }
 };
 
 // Function to migrate extracurriculars data
-export const migrateExtracurriculars = async () => {
+export const migrateExtracurriculars = async (userId: string) => {
   try {
-    // Check if extracurriculars already exist
-    const extracurricularsCollection = collection(db, 'extracurriculars');
-    const extracurricularsSnapshot = await getDocs(extracurricularsCollection);
+    // Create extracurriculars collection in the user's content area
+    const extracurricularsCollection = collection(db, `users/${userId}/content/extracurricularActivities/items`);
     
-    if (!extracurricularsSnapshot.empty) {
-      console.log('Extracurriculars already exist, skipping migration');
-      return;
-    }
-    
-    // Extract extracurriculars data from ExtracurricularsSection component
-    // This would be based on the data in the ExtracurricularsSection.tsx file
+    // Define extracurriculars data
     const extracurricularsData = [
       {
         title: "Competitive Programming Club",
@@ -214,6 +248,7 @@ export const migrateExtracurriculars = async () => {
       }
     ];
     
+    // Add each extracurricular to the collection
     for (const extracurricular of extracurricularsData) {
       await addDoc(extracurricularsCollection, extracurricular);
     }
@@ -221,16 +256,6 @@ export const migrateExtracurriculars = async () => {
     console.log('Extracurriculars data migrated successfully');
   } catch (error) {
     console.error('Error migrating extracurriculars data:', error);
+    throw error;
   }
-};
-
-// Function to run all migrations
-export const migrateAllData = async () => {
-  await migrateProfile();
-  await migrateProjects();
-  await migrateAchievements();
-  await migrateEducation();
-  await migrateExtracurriculars();
-  
-  console.log('All data migrated successfully!');
 }; 
